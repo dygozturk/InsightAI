@@ -1,6 +1,6 @@
-from pathlib import Path
 import pandas as pd
-import numpy as np
+from pathlib import Path
+from backend.data_quality import classify_transactions
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_PATH = BASE_DIR / "data" / "raw" / "online_retail_II.xlsx"
@@ -75,9 +75,7 @@ def main():
     
     print("\n--- IPTAL ISLEMI ANALIZI ---")
 
-    sample_df["IsCancelled"] = (
-        sample_df["Invoice"].str.startswith("C", na=False)
-    )
+    sample_df = classify_transactions(sample_df)
 
     cancelled_count = sample_df["IsCancelled"].sum()
     negative_quantity_count = (sample_df["Quantity"] < 0).sum()
@@ -100,19 +98,6 @@ def main():
     
 
     print("\n--- ISLEM TURU SINIFLANDIRMASI ---")
-
-    conditions = [
-        sample_df["IsCancelled"],
-        (sample_df["Quantity"] <= 0) | (sample_df["Price"] <= 0)
-    ]
-
-    choices = ["Cancellation", "Review"]
-
-    sample_df["TransactionType"] = np.select(
-        conditions,
-        choices,
-        default="Sale"
-    )
 
     print(sample_df["TransactionType"].value_counts())
 
