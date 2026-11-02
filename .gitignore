@@ -1,0 +1,19 @@
+# Python sanal ortami
+.venv/
+
+# Python gecici dosyalari
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Gizli bilgiler
+.env
+.env.*
+!.env.example
+
+# Yerel veri setleri
+data/raw/
+
+# Gecici sistem dosyalari
+.DS_Store
+Thumbs.db
