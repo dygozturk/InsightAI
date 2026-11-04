@@ -1,5 +1,9 @@
 import pandas as pd
 from pathlib import Path
+from backend.data_pipeline import (
+    run_cleaning_pipeline,
+    generate_cleaning_summary
+)
 from backend.report_generator import (
     save_quality_report,
     create_report_metadata
@@ -130,17 +134,45 @@ def main():
     for metric, value in quality_summary.items():
         print(f"{metric}: {value}")
     
+
+    print("\n--- VERI TEMIZLEME PIPELINE ---")
+
+    cleaned_df = run_cleaning_pipeline(raw_df)
+
+    print(f"Ham veri satir sayisi: {len(raw_df)}")
+    print(f"Temizlenmis veri satir sayisi: {len(cleaned_df)}")
+
+    print("\nTemizlenmis veri islem turleri:")
+    print(cleaned_df["TransactionType"].value_counts())
+
+    print("\nTemizlenmis veride eksik musteri sayisi:")
+    print(cleaned_df["Customer ID"].isna().sum())
+
+    print("\nTemizlenmis veride tekrar eden satir sayisi:")
+    print(cleaned_df.duplicated().sum())
+
+    print("\n--- VERI TEMIZLEME OZET RAPORU ---")
+
+    cleaning_summary = generate_cleaning_summary(
+        raw_df,
+        cleaned_df
+    )
+
+    for metric, value in cleaning_summary.items():
+        print(f"{metric}: {value}")
+
     print("\n--- JSON RAPORU OLUSTURULUYOR ---")
-    
+
     metadata = create_report_metadata(
-       source=DATA_PATH.name,
-       report_type="data_quality",
-       sample_size=len(sample_df)
+        source=DATA_PATH.name,
+        report_type="data_quality",
+        sample_size=len(raw_df)
     )
 
     report_data = {
         "metadata": metadata,
-        "quality_metrics": quality_summary
+        "quality_metrics": quality_summary,
+        "cleaning_metrics": cleaning_summary
     }
 
     report_path = BASE_DIR / "reports" / "data_quality_report.json"
@@ -151,6 +183,7 @@ def main():
     )
 
     print(f"Rapor basariyla kaydedildi: {saved_path}")
+
 
 if __name__ == "__main__":
     main()
