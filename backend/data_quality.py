@@ -33,3 +33,24 @@ def classify_transactions(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return result
+
+def generate_quality_summary(df):
+    """
+    Veri setinin temel kalite metriklerini hesaplar.
+
+    Parameters:
+        df (pd.DataFrame): Analiz edilecek veri seti.
+
+    Returns:
+        dict: Veri kalitesi metrikleri.
+    """
+    summary = {
+        "total_rows": len(df),
+        "total_columns": len(df.columns),
+        "missing_values": int(df.isnull().sum().sum()),
+        "duplicate_rows": int(df.duplicated().sum()),
+        "invalid_quantity": int((df["Quantity"] <= 0).sum()),
+        "invalid_price": int((df["Price"] <= 0).sum())
+    }
+
+    return summary

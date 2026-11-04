@@ -1,6 +1,12 @@
 import pandas as pd
 from pathlib import Path
-from backend.data_quality import classify_transactions
+from backend.report_generator import save_quality_report
+from backend.data_quality import (
+    classify_transactions,
+    get_missing_values,
+    get_duplicate_count,
+    generate_quality_summary
+)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_PATH = BASE_DIR / "data" / "raw" / "online_retail_II.xlsx"
@@ -45,15 +51,16 @@ def main():
             "Customer ID": str
         }
     )
+    raw_df = sample_df.copy()
 
     print(f"Satir sayisi: {sample_df.shape[0]}")
     print(f"Sutun sayisi: {sample_df.shape[1]}")
 
     print("\nEksik deger sayilari:")
-    print(sample_df.isnull().sum())
+    print(get_missing_values(sample_df))
 
     print("\nTekrarlanan satir sayisi:")
-    print(sample_df.duplicated().sum())
+    print(get_duplicate_count(sample_df))
 
     print("\nNegatif veya sifir miktarli kayit sayisi:")
     print((sample_df["Quantity"] <= 0).sum())
@@ -96,6 +103,12 @@ def main():
         ((sample_df["Quantity"] < 0) & ~sample_df["IsCancelled"]).sum()
     )
     
+    print("\n--- HAM VERI KALITESI OZETI ---")
+
+    raw_quality_summary = generate_quality_summary(raw_df)
+
+    for metric, value in raw_quality_summary.items():
+        print(f"{metric}: {value}")
 
     print("\n--- ISLEM TURU SINIFLANDIRMASI ---")
 
@@ -107,6 +120,23 @@ def main():
         .agg(["count", "mean"])
     )
 
+    print("\n--- OTOMATIK VERI KALITESI OZETI ---")
+
+    quality_summary = generate_quality_summary(sample_df)
+
+    for metric, value in quality_summary.items():
+        print(f"{metric}: {value}")
+    
+    print("\n--- JSON RAPORU OLUSTURULUYOR ---")
+
+    report_path = BASE_DIR / "reports" / "data_quality_report.json"
+
+    saved_path = save_quality_report(
+        quality_summary,
+        report_path
+    )
+
+    print(f"Rapor basariyla kaydedildi: {saved_path}")
 
 if __name__ == "__main__":
     main()
