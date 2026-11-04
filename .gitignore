@@ -17,3 +17,6 @@ data/raw/
 # Gecici sistem dosyalari
 .DS_Store
 Thumbs.db
+
+# Generated reports
+/reports/*.json

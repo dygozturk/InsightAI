@@ -1,8 +1,0 @@
-{
-    "total_rows": 1000,
-    "total_columns": 10,
-    "missing_values": 7,
-    "duplicate_rows": 28,
-    "invalid_quantity": 46,
-    "invalid_price": 4
-}
