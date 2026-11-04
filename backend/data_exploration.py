@@ -1,5 +1,12 @@
 import pandas as pd
 from pathlib import Path
+
+from backend.analytics import (
+    calculate_total_revenue,
+    calculate_average_order_value,
+    calculate_total_orders,
+    get_top_selling_products
+)
 from backend.data_pipeline import (
     run_cleaning_pipeline,
     generate_cleaning_summary
@@ -183,6 +190,27 @@ def main():
     )
 
     print(f"Rapor basariyla kaydedildi: {saved_path}")
+
+
+    print("\n--- SATIS ANALITIGI ---")
+
+    total_revenue = calculate_total_revenue(cleaned_df)
+    print(f"Toplam satis geliri: {total_revenue:,.2f}")
+    
+    average_order_value = calculate_average_order_value(cleaned_df)
+    print(f"Ortalama siparis tutari (AOV): {average_order_value:,.2f}")
+    
+    total_orders = calculate_total_orders(cleaned_df)
+    print(f"Toplam benzersiz siparis sayisi: {total_orders}")
+
+    print("\n--- EN COK SATILAN 10 URUN ---")
+
+    top_products = get_top_selling_products(
+        cleaned_df,
+        top_n=10
+    )
+
+    print(top_products.to_string(index=False))
 
 
 if __name__ == "__main__":
