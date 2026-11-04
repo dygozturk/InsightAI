@@ -1,6 +1,9 @@
 import pandas as pd
 from pathlib import Path
-from backend.report_generator import save_quality_report
+from backend.report_generator import (
+    save_quality_report,
+    create_report_metadata
+)
 from backend.data_quality import (
     classify_transactions,
     get_missing_values,
@@ -128,11 +131,22 @@ def main():
         print(f"{metric}: {value}")
     
     print("\n--- JSON RAPORU OLUSTURULUYOR ---")
+    
+    metadata = create_report_metadata(
+       source=DATA_PATH.name,
+       report_type="data_quality",
+       sample_size=len(sample_df)
+    )
+
+    report_data = {
+        "metadata": metadata,
+        "quality_metrics": quality_summary
+    }
 
     report_path = BASE_DIR / "reports" / "data_quality_report.json"
 
     saved_path = save_quality_report(
-        quality_summary,
+        report_data,
         report_path
     )
 

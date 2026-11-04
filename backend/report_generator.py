@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime, timezone
 import json
 
 
@@ -25,3 +26,17 @@ def save_quality_report(summary, output_path):
         )
 
     return output_path
+
+def create_report_metadata(source, report_type, sample_size):
+    """
+    Rapor icin aciklayici metadata bilgileri olusturur.
+    """
+
+    metadata = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source": source,
+        "report_type": report_type,
+        "sample_size": sample_size
+    }
+
+    return metadata
