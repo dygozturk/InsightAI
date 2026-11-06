@@ -5,7 +5,8 @@ from backend.analytics import (
     calculate_total_revenue,
     calculate_average_order_value,
     calculate_total_orders,
-    get_top_selling_products
+    get_top_selling_products,
+    get_top_revenue_products
 )
 
 
@@ -185,3 +186,86 @@ def test_get_top_selling_products_descending_order():
     quantities = result["Quantity"].tolist()
 
     assert quantities == [50, 25, 10, 5]
+
+
+def test_get_top_revenue_products():
+
+    df = pd.DataFrame({
+        "StockCode": ["A01", "B02", "A01", "C03"],
+        "Description": ["Kalem", "Defter", "Kalem", "Silgi"],
+        "Quantity": [5, 2, 3, 10],
+        "Price": [10.0, 50.0, 10.0, 5.0]
+    })
+
+    result = get_top_revenue_products(df, top_n=2)
+
+    assert len(result) == 2
+
+    assert result.iloc[0]["StockCode"] == "B02"
+    assert result.iloc[0]["Revenue"] == 100.0
+
+    assert result.iloc[1]["StockCode"] == "A01"
+    assert result.iloc[1]["Revenue"] == 80.0
+
+
+def test_get_top_revenue_products_missing_column():
+
+    df = pd.DataFrame({
+        "StockCode": ["A01", "B02"],
+        "Description": ["Kalem", "Defter"],
+        "Quantity": [5, 2]
+    })
+
+    with pytest.raises(ValueError, match="Eksik sutun: Price"):
+        get_top_revenue_products(df)
+
+
+@pytest.mark.parametrize(
+    "invalid_top_n",
+    [0, -1, 2.5, "5", None, True]
+)
+def test_get_top_revenue_products_invalid_top_n(invalid_top_n):
+
+    df = pd.DataFrame({
+        "StockCode": ["A01"],
+        "Description": ["Kalem"],
+        "Quantity": [5],
+        "Price": [10.0]
+    })
+
+    with pytest.raises(ValueError, match="top_n pozitif bir tam sayi olmalidir"):
+        get_top_revenue_products(df, top_n=invalid_top_n)
+
+
+def test_get_top_revenue_products_empty_dataframe():
+
+    df = pd.DataFrame(columns=[
+        "StockCode",
+        "Description",
+        "Quantity",
+        "Price"
+    ])
+
+    result = get_top_revenue_products(df)
+
+    assert result.empty
+    assert "Revenue" in result.columns
+    assert len(result) == 0
+
+
+def test_get_top_revenue_products_does_not_modify_original():
+
+    df = pd.DataFrame({
+        "StockCode": ["A01", "B02"],
+        "Description": ["Kalem", "Defter"],
+        "Quantity": [5, 2],
+        "Price": [10.0, 50.0]
+    })
+
+    original_df = df.copy(deep=True)
+
+    get_top_revenue_products(df)
+
+    pd.testing.assert_frame_equal(df, original_df)
+
+    assert "Revenue" not in df.columns

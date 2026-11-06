@@ -88,3 +88,56 @@ def get_top_selling_products(
     )
 
     return top_products
+
+
+def get_top_revenue_products(
+    df: pd.DataFrame,
+    top_n: int = 10
+) -> pd.DataFrame:
+    """
+    Urunleri toplam satis gelirine gore siralar.
+
+    Quantity * Price = Revenue
+
+    En yuksek gelir getiren ilk top_n urunu dondurur.
+    """
+
+    required_columns = [
+        "StockCode",
+        "Description",
+        "Quantity",
+        "Price"
+    ]
+
+    for column in required_columns:
+        if column not in df.columns:
+            raise ValueError(
+                f"Eksik sutun: {column}"
+            )
+
+    if not isinstance(top_n, int) or isinstance(top_n, bool) or top_n <= 0:
+        raise ValueError(
+            "top_n pozitif bir tam sayi olmalidir."
+        )
+
+    revenue_df = df.copy()
+
+    revenue_df["Revenue"] = (
+        revenue_df["Quantity"] * revenue_df["Price"]
+    )
+
+    top_products = (
+        revenue_df.groupby(
+            ["StockCode", "Description"],
+            as_index=False
+        )["Revenue"]
+        .sum()
+        .sort_values(
+            by="Revenue",
+            ascending=False
+        )
+        .head(top_n)
+        .reset_index(drop=True)
+    )
+
+    return top_products
