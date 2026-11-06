@@ -5,7 +5,9 @@ from backend.analytics import (
     calculate_total_revenue,
     calculate_average_order_value,
     calculate_total_orders,
-    get_top_selling_products
+    get_top_selling_products,
+    get_top_revenue_products,
+    generate_sales_summary
 )
 from backend.data_pipeline import (
     run_cleaning_pipeline,
@@ -182,6 +184,11 @@ def main():
         "cleaning_metrics": cleaning_summary
     }
 
+    # Satis analizi sonuclarini rapora ekle
+    sales_summary = generate_sales_summary(cleaned_df)
+
+    report_data["sales_metrics"] = sales_summary
+    
     report_path = BASE_DIR / "reports" / "data_quality_report.json"
 
     saved_path = save_quality_report(
@@ -211,6 +218,16 @@ def main():
     )
 
     print(top_products.to_string(index=False))
+
+
+    # En yuksek gelir getiren 10 urun
+    top_revenue_products = get_top_revenue_products(
+        cleaned_df,
+        top_n=10
+    )
+
+    print("\n--- TOP 10 REVENUE PRODUCTS ---")
+    print(top_revenue_products.to_string(index=False))
 
 
 if __name__ == "__main__":

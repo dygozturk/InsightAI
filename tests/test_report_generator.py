@@ -162,3 +162,34 @@ def test_saved_json_report_structure():
     assert cleaning["retention_rate"] == 92.6
     assert cleaning["remaining_duplicates"] == 0
     assert cleaning["remaining_missing_customers"] == 2
+
+
+def test_save_quality_report_with_sales_metrics(tmp_path):
+
+    report_data = {
+        "metadata": {
+            "source": "online_retail_II.xlsx"
+        },
+        "quality_metrics": {
+            "total_rows": 1000
+        },
+        "cleaning_metrics": {
+            "cleaned_rows": 926
+        },
+        "sales_metrics": {
+            "total_revenue": 21969.14,
+            "average_order_value": 535.83,
+            "total_orders": 41
+        }
+    }
+
+    report_path = tmp_path / "sales_report.json"
+
+    save_quality_report(report_data, report_path)
+
+    with open(report_path, "r", encoding="utf-8") as file:
+        saved_report = json.load(file)
+
+    assert "sales_metrics" in saved_report
+    assert saved_report["sales_metrics"]["total_revenue"] == 21969.14
+    assert saved_report["sales_metrics"]["total_orders"] == 41

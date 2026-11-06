@@ -141,3 +141,32 @@ def get_top_revenue_products(
     )
 
     return top_products
+
+
+def generate_sales_summary(df: pd.DataFrame) -> dict:
+    """
+    Temizlenmis satis verilerinden
+    ozet satis metriklerini olusturur.
+    """
+
+    total_revenue = calculate_total_revenue(df)
+
+    average_order_value = calculate_average_order_value(df)
+
+    total_orders = calculate_total_orders(df)
+
+    top_revenue_products = get_top_revenue_products(
+        df,
+        top_n=10
+    )
+
+    summary = {
+        "total_revenue": round(float(total_revenue), 2),
+        "average_order_value": round(float(average_order_value), 2),
+        "total_orders": int(total_orders),
+        "top_revenue_products": top_revenue_products.to_dict(
+            orient="records"
+        )
+    }
+
+    return summary

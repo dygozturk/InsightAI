@@ -1,12 +1,14 @@
 import pandas as pd
 import pytest
+import json
 
 from backend.analytics import (
     calculate_total_revenue,
     calculate_average_order_value,
     calculate_total_orders,
     get_top_selling_products,
-    get_top_revenue_products
+    get_top_revenue_products,
+    generate_sales_summary
 )
 
 
@@ -269,3 +271,171 @@ def test_get_top_revenue_products_does_not_modify_original():
     pd.testing.assert_frame_equal(df, original_df)
 
     assert "Revenue" not in df.columns
+
+
+def test_generate_sales_summary():
+
+    df = pd.DataFrame({
+        "Invoice": ["INV001", "INV001", "INV002"],
+        "StockCode": ["A01", "B02", "A01"],
+        "Description": ["Kalem", "Defter", "Kalem"],
+        "Quantity": [2, 1, 3],
+        "Price": [10.0, 50.0, 10.0]
+    })
+
+    result = generate_sales_summary(df)
+
+    assert isinstance(result, dict)
+
+    assert result["total_revenue"] == 100.0
+    assert result["average_order_value"] == 50.0
+    assert result["total_orders"] == 2
+
+    assert len(result["top_revenue_products"]) == 2
+
+    assert result["top_revenue_products"][0]["StockCode"] == "A01"
+    assert result["top_revenue_products"][0]["Revenue"] == 50.0
+
+
+def test_generate_sales_summary_json_serializable():
+
+    df = pd.DataFrame({
+        "Invoice": ["INV001", "INV002"],
+        "StockCode": ["A01", "B02"],
+        "Description": ["Kalem", "Defter"],
+        "Quantity": [5, 2],
+        "Price": [10.0, 25.0]
+    })
+
+    summary = generate_sales_summary(df)
+
+    json_output = json.dumps(summary, allow_nan=False)
+
+    assert isinstance(json_output, str)
+
+    parsed_summary = json.loads(json_output)
+
+    assert parsed_summary["total_revenue"] == 100.0
+    assert len(parsed_summary["top_revenue_products"]) == 2
+
+
+def test_generate_sales_summary_metrics_consistency():
+
+    df = pd.DataFrame({
+        "Invoice": ["INV001", "INV001", "INV002"],
+        "StockCode": ["A01", "B02", "C03"],
+        "Description": ["Kalem", "Defter", "Silgi"],
+        "Quantity": [2, 1, 4],
+        "Price": [10.0, 50.0, 5.0]
+    })
+
+    summary = generate_sales_summary(df)
+
+    expected_average = round(
+        summary["total_revenue"] / summary["total_orders"],
+        2
+    )
+
+    assert summary["average_order_value"] == expected_average
+
+
+def test_generate_sales_summary_empty_dataframe():
+
+    df = pd.DataFrame(columns=[
+        "Invoice",
+        "StockCode",
+        "Description",
+        "Quantity",
+        "Price"
+    ])
+
+    summary = generate_sales_summary(df)
+
+    assert summary["total_revenue"] == 0.0
+    assert summary["average_order_value"] == 0.0
+    assert summary["total_orders"] == 0
+    assert summary["top_revenue_products"] == []
+
+
+def test_generate_sales_summary_does_not_modify_original():
+
+    df = pd.DataFrame({
+        "Invoice": ["INV001", "INV002"],
+        "StockCode": ["A01", "B02"],
+        "Description": ["Kalem", "Defter"],
+        "Quantity": [5, 2],
+        "Price": [10.0, 25.0]
+    })
+
+    original_df = df.copy(deep=True)
+
+    generate_sales_summary(df)
+
+    pd.testing.assert_frame_equal(df, original_df)
+
+
+def test_generate_sales_summary_schema():
+
+    df = pd.DataFrame({
+        "Invoice": ["INV001", "INV002"],
+        "StockCode": ["A01", "B02"],
+        "Description": ["Kalem", "Defter"],
+        "Quantity": [5, 2],
+        "Price": [10.0, 25.0]
+    })
+
+    summary = generate_sales_summary(df)
+
+    expected_keys = {
+        "total_revenue",
+        "average_order_value",
+        "total_orders",
+        "top_revenue_products"
+    }
+
+    assert set(summary.keys()) == expected_keys
+
+    assert isinstance(summary["total_revenue"], float)
+    assert isinstance(summary["average_order_value"], float)
+    assert isinstance(summary["total_orders"], int)
+    assert isinstance(summary["top_revenue_products"], list)
+
+
+def test_generate_sales_summary_missing_price_column():
+
+    df = pd.DataFrame({
+        "Invoice": ["INV001", "INV002"],
+        "StockCode": ["A01", "B02"],
+        "Description": ["Kalem", "Defter"],
+        "Quantity": [5, 2]
+    })
+
+    with pytest.raises(ValueError, match="Price"):
+        generate_sales_summary(df)
+
+
+@pytest.mark.parametrize(
+    "missing_column",
+    [
+        "Invoice",
+        "StockCode",
+        "Description",
+        "Quantity",
+        "Price"
+    ]
+)
+def test_generate_sales_summary_missing_required_columns(
+    missing_column
+):
+    df = pd.DataFrame({
+        "Invoice": ["INV001", "INV002"],
+        "StockCode": ["A01", "B02"],
+        "Description": ["Kalem", "Defter"],
+        "Quantity": [5, 2],
+        "Price": [10.0, 25.0]
+    })
+
+    df = df.drop(columns=[missing_column])
+
+    with pytest.raises(ValueError, match=missing_column):
+        generate_sales_summary(df)
