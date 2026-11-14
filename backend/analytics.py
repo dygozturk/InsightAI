@@ -159,6 +159,8 @@ def generate_sales_summary(df: pd.DataFrame) -> dict:
         df,
         top_n=10
     )
+    total_units_sold = calculate_total_units_sold(df)
+    average_items_per_order = calculate_average_items_per_order(df)
 
     summary = {
         "total_revenue": round(float(total_revenue), 2),
@@ -166,7 +168,36 @@ def generate_sales_summary(df: pd.DataFrame) -> dict:
         "total_orders": int(total_orders),
         "top_revenue_products": top_revenue_products.to_dict(
             orient="records"
-        )
+        ),
+        "total_units_sold": total_units_sold,
+        "average_items_per_order": average_items_per_order
     }
 
     return summary
+
+def calculate_total_units_sold(df: pd.DataFrame) -> int:
+
+    required_columns = ["Quantity"]
+
+    for column in required_columns:
+        if column not in df.columns:
+            raise ValueError(
+                f"Missing required column: {column}"
+            )
+
+    total_units = df["Quantity"].sum()
+
+    return int(total_units)
+
+def calculate_average_items_per_order(df: pd.DataFrame) -> float:
+
+    total_units = calculate_total_units_sold(df)
+
+    total_orders = calculate_total_orders(df)
+
+    if total_orders == 0:
+        return 0.0
+
+    average_items = total_units / total_orders
+
+    return round(float(average_items), 2)

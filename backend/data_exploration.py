@@ -200,6 +200,18 @@ def main():
 
 
     print("\n--- SATIS ANALITIGI ---")
+    
+    print(
+        f"Toplam satilan urun adedi: "
+        f"{sales_summary['total_units_sold']:,}"
+    )
+    
+    print(
+        f"Siparis basina ortalama urun adedi: "
+        f"{sales_summary['average_items_per_order']:,.2f}"
+    )
+
+
 
     total_revenue = calculate_total_revenue(cleaned_df)
     print(f"Toplam satis geliri: {total_revenue:,.2f}")

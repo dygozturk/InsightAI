@@ -8,7 +8,9 @@ from backend.analytics import (
     calculate_total_orders,
     get_top_selling_products,
     get_top_revenue_products,
-    generate_sales_summary
+    generate_sales_summary,
+    calculate_total_units_sold,
+    calculate_average_items_per_order
 )
 
 
@@ -390,7 +392,9 @@ def test_generate_sales_summary_schema():
         "total_revenue",
         "average_order_value",
         "total_orders",
-        "top_revenue_products"
+        "top_revenue_products",
+        "total_units_sold",
+        "average_items_per_order"
     }
 
     assert set(summary.keys()) == expected_keys
@@ -399,6 +403,8 @@ def test_generate_sales_summary_schema():
     assert isinstance(summary["average_order_value"], float)
     assert isinstance(summary["total_orders"], int)
     assert isinstance(summary["top_revenue_products"], list)
+    assert isinstance(summary["total_units_sold"], int)
+    assert summary["total_units_sold"] == 7
 
 
 def test_generate_sales_summary_missing_price_column():
@@ -439,3 +445,106 @@ def test_generate_sales_summary_missing_required_columns(
 
     with pytest.raises(ValueError, match=missing_column):
         generate_sales_summary(df)
+
+def test_calculate_total_units_sold():
+
+    df = pd.DataFrame({
+        "Quantity": [5, 3, 7]
+    })
+
+    result = calculate_total_units_sold(df)
+
+    assert result == 15
+    assert isinstance(result, int)
+
+
+def test_calculate_total_units_sold_missing_column():
+
+    df = pd.DataFrame({
+        "StockCode": ["A01", "B02"],
+        "Price": [10.0, 25.0]
+    })
+
+    with pytest.raises(ValueError, match="Quantity"):
+        calculate_total_units_sold(df)
+
+
+def test_calculate_total_units_sold_empty_dataframe():
+
+    df = pd.DataFrame(columns=["Quantity"])
+
+    result = calculate_total_units_sold(df)
+
+    assert result == 0
+    assert isinstance(result, int)
+
+
+def test_calculate_total_units_sold_does_not_modify_original():
+
+    df = pd.DataFrame({
+        "Quantity": [5, 3, 7]
+    })
+
+    original_df = df.copy(deep=True)
+
+    calculate_total_units_sold(df)
+
+    pd.testing.assert_frame_equal(df, original_df)
+
+
+def test_calculate_average_items_per_order():
+
+    df = pd.DataFrame({
+        "Invoice": ["INV001", "INV001", "INV002"],
+        "Quantity": [5, 3, 7]
+    })
+
+    result = calculate_average_items_per_order(df)
+
+    assert result == 7.5
+    assert isinstance(result, float)
+
+
+def test_calculate_average_items_per_order_empty_dataframe():
+
+    df = pd.DataFrame(columns=[
+        "Invoice",
+        "Quantity"
+    ])
+
+    result = calculate_average_items_per_order(df)
+
+    assert result == 0.0
+    assert isinstance(result, float)
+
+
+@pytest.mark.parametrize(
+    "missing_column",
+    ["Invoice", "Quantity"]
+)
+def test_calculate_average_items_per_order_missing_column(
+    missing_column
+):
+    df = pd.DataFrame({
+        "Invoice": ["INV001", "INV002"],
+        "Quantity": [5, 3]
+    })
+
+    df = df.drop(columns=[missing_column])
+
+    with pytest.raises(ValueError, match=missing_column):
+        calculate_average_items_per_order(df)
+
+
+def test_calculate_average_items_per_order_does_not_modify_original():
+
+    df = pd.DataFrame({
+        "Invoice": ["INV001", "INV001", "INV002"],
+        "Quantity": [5, 3, 7]
+    })
+
+    original_df = df.copy(deep=True)
+
+    calculate_average_items_per_order(df)
+
+    pd.testing.assert_frame_equal(df, original_df)
